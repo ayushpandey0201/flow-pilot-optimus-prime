@@ -1,7 +1,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SimulationState } from "@/types/simulation";
-import { determineTrafficState } from "@/services/simulationService";
+import { createStateKey } from "@/services/simulationService";
 
 interface QlearningInfoProps {
   simulationState: SimulationState;
@@ -11,27 +11,23 @@ const QlearningInfo = ({ simulationState }: QlearningInfoProps) => {
   const { 
     qValues, 
     currentPhase, 
-    vehicleCount, 
+    roadTraffic, 
     currentReward, 
     epsilon, 
     learningRate, 
-    discountFactor 
+    discountFactor,
+    adaptiveMode
   } = simulationState;
 
-  const currentState = determineTrafficState(vehicleCount);
+  const currentState = createStateKey(roadTraffic);
   
   // Get Q-values for current state
-  const stateQValues = [
-    qValues[`${currentState}_0`] || 0,
-    qValues[`${currentState}_1`] || 0,
-    qValues[`${currentState}_2`] || 0,
-  ];
+  const stateQValues = Array.from({ length: 6 }, (_, i) => 
+    qValues[`${currentState}_${i}`] || 0
+  );
 
   // Find the best action for current state
   const bestActionIndex = stateQValues.indexOf(Math.max(...stateQValues));
-  
-  // Get action names
-  const actionNames = ["Green", "Yellow", "Red"];
 
   return (
     <Card>
@@ -41,12 +37,42 @@ const QlearningInfo = ({ simulationState }: QlearningInfoProps) => {
       <CardContent>
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-2">
-            <InfoItem label="Current state" value={currentState.replace("_", " ")} />
-            <InfoItem label="Current action" value={actionNames[currentPhase]} />
             <InfoItem label="Current reward" value={currentReward.toFixed(2)} />
-            <InfoItem label="Best action" value={actionNames[bestActionIndex]} />
+            <InfoItem 
+              label="Learning mode" 
+              value={adaptiveMode ? "Adaptive" : "Pure Q-Learning"} 
+            />
+            <InfoItem 
+              label="Current phase" 
+              value={`Phase ${currentPhase}: ${["A", "B", "C", "D", "F", "G"][currentPhase]} Green`} 
+            />
+            <InfoItem 
+              label="Best phase" 
+              value={`Phase ${bestActionIndex}: ${["A", "B", "C", "D", "F", "G"][bestActionIndex]} Green`} 
+            />
           </div>
           
+          <div className="space-y-2">
+            <h4 className="text-sm font-medium">Road Traffic:</h4>
+            <div className="grid grid-cols-3 gap-2">
+              {Object.entries(roadTraffic)
+                .filter(([id]) => !id.includes("_out"))
+                .map(([id, traffic]) => (
+                <div 
+                  key={id}
+                  className={`p-2 rounded text-center ${
+                    id === `road_${["a", "b", "c", "d", "f", "g"][currentPhase]}` 
+                      ? "bg-green-100 border border-green-300" 
+                      : "bg-slate-100"
+                  }`}
+                >
+                  <div className="text-xs text-slate-500 mb-1">{id.replace("road_", "")}</div>
+                  <div className="font-semibold">{traffic}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
           <div className="space-y-2">
             <h4 className="text-sm font-medium">Q-values for current state:</h4>
             <div className="grid grid-cols-3 gap-2">
@@ -57,7 +83,7 @@ const QlearningInfo = ({ simulationState }: QlearningInfoProps) => {
                     i === bestActionIndex ? "bg-blue-100 border border-blue-300" : "bg-slate-100"
                   }`}
                 >
-                  <div className="text-xs text-slate-500 mb-1">{actionNames[i]}</div>
+                  <div className="text-xs text-slate-500 mb-1">{["A", "B", "C", "D", "F", "G"][i]} Green</div>
                   <div className="font-semibold">{value.toFixed(2)}</div>
                 </div>
               ))}

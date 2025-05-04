@@ -11,6 +11,8 @@ export interface SimulationState {
   epsilon: number;
   learningRate: number;
   discountFactor: number;
+  roadTraffic: Record<string, number>; // Traffic on each road (vehicles per road)
+  adaptiveMode: boolean; // Whether to use the adaptive Q-learning mode
 }
 
 export interface TrafficLightPhase {
@@ -18,6 +20,7 @@ export interface TrafficLightPhase {
   name: string;
   duration: number;
   color: string;
+  activeRoads: string[]; // Roads that have green light in this phase
 }
 
 export interface SimulationSettings {
@@ -26,6 +29,7 @@ export interface SimulationSettings {
   learningRate: number;
   epsilon: number;
   discountFactor: number;
+  adaptiveMode: boolean; // Enable/disable adaptive learning
 }
 
 export interface TrafficNode {
@@ -40,6 +44,7 @@ export interface TrafficEdge {
   from: string;
   to: string;
   length: number;
+  angle: number; // Angle in degrees for circular layout
 }
 
 export interface Vehicle {
@@ -47,4 +52,5 @@ export interface Vehicle {
   position: [number, number];
   speed: number;
   waitingTime: number;
+  roadId: string; // The road the vehicle is on
 }

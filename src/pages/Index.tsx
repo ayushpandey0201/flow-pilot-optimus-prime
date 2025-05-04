@@ -9,7 +9,7 @@ const Index = () => {
       <footer className="py-6 text-center text-sm text-slate-500">
         <p>SUMO Traffic Simulation with Q-Learning Reinforcement Learning Algorithm</p>
         <p className="text-xs mt-1">
-          Based on Simulation of Urban MObility (SUMO) traffic simulation package
+          Six-road circular junction with adaptive traffic management using reinforcement learning
         </p>
       </footer>
     </div>

@@ -2,8 +2,10 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
+import { Switch } from "@/components/ui/switch";
 import { SimulationSettings } from "@/types/simulation";
 import { Play, Pause, RotateCcw } from "lucide-react";
+import { Label } from "@/components/ui/label";
 
 interface ControlPanelProps {
   isRunning: boolean;
@@ -65,6 +67,19 @@ const ControlPanel = ({
             >
               <RotateCcw className="h-4 w-4" />
             </Button>
+          </div>
+
+          <div className="flex items-center space-x-2 py-2">
+            <Switch
+              checked={settings.adaptiveMode}
+              onCheckedChange={(checked) => onSettingsChange({ adaptiveMode: checked })}
+              disabled={isRunning}
+              id="adaptive-mode"
+            />
+            <Label htmlFor="adaptive-mode">Adaptive Mode</Label>
+            <div className="text-xs text-slate-500 ml-2">
+              (Prioritizes roads with highest traffic)
+            </div>
           </div>
 
           <div className="space-y-4">

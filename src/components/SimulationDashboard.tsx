@@ -1,3 +1,4 @@
+
 import { useSimulation } from "@/hooks/useSimulation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { trafficLightPhases } from "@/services/simulationService";
@@ -39,7 +40,7 @@ const SimulationDashboard = () => {
       <div className="text-center mb-6">
         <h1 className="text-3xl font-bold">SUMO Traffic Simulation with Q-Learning</h1>
         <p className="text-muted-foreground">
-          Optimize traffic flow through reinforcement learning
+          Circular Junction with 6 Roads Using Reinforcement Learning
         </p>
       </div>
 
@@ -48,6 +49,7 @@ const SimulationDashboard = () => {
           vehicleCount={state.vehicleCount}
           currentPhase={state.currentPhase}
           trafficPhases={trafficLightPhases}
+          roadTraffic={state.roadTraffic}
         />
         
         <QlearningInfo simulationState={state} />

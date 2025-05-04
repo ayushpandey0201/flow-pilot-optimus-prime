@@ -9,6 +9,7 @@ const defaultSettings: SimulationSettings = {
   learningRate: 0.1,
   epsilon: 0.1,
   discountFactor: 0.9,
+  adaptiveMode: true,
 };
 
 export function useSimulation() {
