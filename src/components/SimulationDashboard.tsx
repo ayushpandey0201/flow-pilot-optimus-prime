@@ -1,4 +1,3 @@
-
 import { useSimulation } from "@/hooks/useSimulation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { trafficLightPhases } from "@/services/simulationService";
@@ -38,9 +37,9 @@ const SimulationDashboard = () => {
   return (
     <div className="container mx-auto py-6">
       <div className="text-center mb-6">
-        <h1 className="text-3xl font-bold">SUMO Traffic Simulation with Q-Learning</h1>
+        <h1 className="text-3xl font-bold">Traffic Junction Simulation with Q-Learning</h1>
         <p className="text-muted-foreground">
-          Circular Junction with 6 Roads Using Reinforcement Learning
+          Simple Four-Way Junction with Reinforcement Learning
         </p>
       </div>
 
@@ -50,10 +49,8 @@ const SimulationDashboard = () => {
           currentPhase={state.currentPhase}
           trafficPhases={trafficLightPhases}
           roadTraffic={state.roadTraffic}
+          nodeTrafficState={state.nodeTrafficState}
         />
-        
-        <QlearningInfo simulationState={state} />
-        
         <ControlPanel
           isRunning={state.isRunning}
           step={state.step}

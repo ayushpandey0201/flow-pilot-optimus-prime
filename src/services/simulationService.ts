@@ -1,45 +1,46 @@
-
 import { SimulationState, SimulationSettings, Vehicle, TrafficLightPhase, TrafficNode, TrafficEdge } from "../types/simulation";
 
-// Define traffic nodes for the cross-shaped layout
+// Define traffic nodes for the simple T-junction layout
 export const trafficNodes: TrafficNode[] = [
-  { id: "e", x: 250, y: 250, hasTrafficLight: true }, // Central node
-  { id: "n", x: 250, y: 100, hasTrafficLight: false }, // North
-  { id: "e", x: 400, y: 250, hasTrafficLight: false }, // East
-  { id: "s", x: 250, y: 400, hasTrafficLight: false }, // South
-  { id: "w", x: 100, y: 250, hasTrafficLight: false }, // West
+  { id: "center", x: 250, y: 250, hasTrafficLight: true }, // Central node/junction
+  { id: "west", x: 100, y: 250, hasTrafficLight: false },  // West point
+  { id: "east", x: 400, y: 250, hasTrafficLight: false },  // East point
+  { id: "north", x: 250, y: 100, hasTrafficLight: false }, // North point
+  { id: "south", x: 250, y: 400, hasTrafficLight: false }, // South point
 ];
 
 // Define traffic edges (roads)
 export const trafficEdges: TrafficEdge[] = [
-  // Incoming roads
-  { id: "road_n", from: "n", to: "e", length: 150, angle: 270 }, // North to center
-  { id: "road_e", from: "e", to: "e", length: 150, angle: 0 },   // East to center
-  { id: "road_s", from: "s", to: "e", length: 150, angle: 90 },  // South to center
-  { id: "road_w", from: "w", to: "e", length: 150, angle: 180 }, // West to center
+  // Main road (horizontal)
+  { id: "road_west", from: "west", to: "center", length: 150, angle: 0 },
+  { id: "road_east", from: "east", to: "center", length: 150, angle: 180 },
+  
+  // Cross road (vertical)
+  { id: "road_north", from: "north", to: "center", length: 150, angle: 90 },
+  { id: "road_south", from: "south", to: "center", length: 150, angle: 270 },
   
   // Outgoing roads
-  { id: "road_n_out", from: "e", to: "n", length: 150, angle: 270 }, // Center to north
-  { id: "road_e_out", from: "e", to: "e", length: 150, angle: 0 },   // Center to east
-  { id: "road_s_out", from: "e", to: "s", length: 150, angle: 90 },  // Center to south
-  { id: "road_w_out", from: "e", to: "w", length: 150, angle: 180 }, // Center to west
+  { id: "road_west_out", from: "center", to: "west", length: 150, angle: 180 },
+  { id: "road_east_out", from: "center", to: "east", length: 150, angle: 0 },
+  { id: "road_north_out", from: "center", to: "north", length: 150, angle: 270 },
+  { id: "road_south_out", from: "center", to: "south", length: 150, angle: 90 },
 ];
 
-// Define traffic light phases - combining complementary roads to optimize flow
+// Define traffic light phases
 export const trafficLightPhases: TrafficLightPhase[] = [
   { 
     id: 0, 
-    name: "N-S Green", 
+    name: "East-West Green", 
     duration: 30, 
     color: "#4ade80",
-    activeRoads: ["road_n", "road_s"] // North and South get green simultaneously
+    activeRoads: ["road_west", "road_east"] // Main road gets green
   },
   { 
     id: 1, 
-    name: "E-W Green", 
+    name: "North-South Green", 
     duration: 30, 
     color: "#4ade80",
-    activeRoads: ["road_e", "road_w"] // East and West get green simultaneously
+    activeRoads: ["road_north", "road_south"] // Cross road gets green
   }
 ];
 
@@ -51,12 +52,12 @@ const trafficLevels = ["low", "medium", "high"];
 
 // Initialize Q-values for all possible state-action pairs
 trafficLightPhases.forEach((phase) => {
-  // Generate all possible traffic state combinations
-  for (let n = 0; n < trafficLevels.length; n++) {
-    for (let e = 0; e < trafficLevels.length; e++) {
-      for (let s = 0; s < trafficLevels.length; s++) {
-        for (let w = 0; w < trafficLevels.length; w++) {
-          const state = `${trafficLevels[n]}_${trafficLevels[e]}_${trafficLevels[s]}_${trafficLevels[w]}`;
+  // Generate all possible traffic state combinations for 4 roads
+  for (let w = 0; w < trafficLevels.length; w++) {
+    for (let e = 0; e < trafficLevels.length; e) {
+      for (let n = 0; n < trafficLevels.length; n++) {
+        for (let s = 0; s < trafficLevels.length; s++) {
+          const state = `${trafficLevels[w]}_${trafficLevels[e]}_${trafficLevels[n]}_${trafficLevels[s]}`;
           initialQValues[`${state}_${phase.id}`] = 0;
         }
       }
@@ -78,10 +79,17 @@ export const initialSimulationState: SimulationState = {
   learningRate: 0.1,
   discountFactor: 0.9,
   roadTraffic: {
-    "road_n": 0,
-    "road_e": 0,
-    "road_s": 0,
-    "road_w": 0
+    "road_west": 0,
+    "road_east": 0,
+    "road_north": 0,
+    "road_south": 0
+  },
+  nodeTrafficState: {
+    "center": { vehicleCount: 0, waitingTime: 0, signalColor: "#4ade80" },
+    "west": { vehicleCount: 0, waitingTime: 0, signalColor: "#ef4444" },
+    "east": { vehicleCount: 0, waitingTime: 0, signalColor: "#ef4444" },
+    "north": { vehicleCount: 0, waitingTime: 0, signalColor: "#ef4444" },
+    "south": { vehicleCount: 0, waitingTime: 0, signalColor: "#ef4444" }
   },
   adaptiveMode: true
 };
@@ -99,7 +107,7 @@ const determineTrafficLevel = (vehicleCount: number): string => {
  * Creates a state key based on current traffic levels on all roads
  */
 export const createStateKey = (roadTraffic: Record<string, number>): string => {
-  return `${determineTrafficLevel(roadTraffic["road_n"])}_${determineTrafficLevel(roadTraffic["road_e"])}_${determineTrafficLevel(roadTraffic["road_s"])}_${determineTrafficLevel(roadTraffic["road_w"])}`;
+  return `${determineTrafficLevel(roadTraffic["road_west"])}_${determineTrafficLevel(roadTraffic["road_east"])}_${determineTrafficLevel(roadTraffic["road_north"])}_${determineTrafficLevel(roadTraffic["road_south"])}`;
 };
 
 /**
@@ -147,14 +155,14 @@ const selectAction = (
   
   // Adaptive mode: analyze traffic patterns to optimize flow
   if (adaptiveMode) {
-    const northSouthTraffic = roadTraffic["road_n"] + roadTraffic["road_s"];
-    const eastWestTraffic = roadTraffic["road_e"] + roadTraffic["road_w"];
+    const eastWestTraffic = roadTraffic["road_west"] + roadTraffic["road_east"];
+    const northSouthTraffic = roadTraffic["road_north"] + roadTraffic["road_south"];
     
     // Choose the phase that serves the direction with more traffic
-    if (northSouthTraffic > eastWestTraffic) {
-      return 0; // North-South green
+    if (eastWestTraffic > northSouthTraffic) {
+      return 0; // East-West green
     } else {
-      return 1; // East-West green
+      return 1; // North-South green
     }
   }
   
@@ -213,6 +221,7 @@ const simulateStep = (
 ): SimulationState => {
   // Update vehicle counts on each road with some randomness
   const newRoadTraffic = { ...state.roadTraffic };
+  const newNodeTrafficState = { ...state.nodeTrafficState };
   
   // For each road, update traffic with some randomness
   Object.keys(newRoadTraffic).forEach(roadId => {
@@ -246,6 +255,31 @@ const simulateStep = (
   
   // Speed decreases with the total number of vehicles
   const newAverageSpeed = Math.max(0, Math.min(13.9, 13.9 - newVehicleCount * 0.1));
+
+  // Update node traffic states
+  // Center node has the traffic light
+  newNodeTrafficState["center"] = {
+    vehicleCount: Math.min(
+      newRoadTraffic["road_west"] + newRoadTraffic["road_east"] + 
+      newRoadTraffic["road_north"] + newRoadTraffic["road_south"], 
+      10
+    ),
+    waitingTime: inactiveRoadTraffic > 0 ? newAverageWaitingTime : 0,
+    signalColor: trafficLightPhases[state.currentPhase].color
+  };
+
+  // Other nodes - vehicles waiting to enter
+  trafficNodes.forEach(node => {
+    if (node.id !== "center") {
+      const incomingRoadId = `road_${node.id}`;
+      const isActive = activeRoads.includes(incomingRoadId);
+      newNodeTrafficState[node.id] = {
+        vehicleCount: newRoadTraffic[incomingRoadId] || 0,
+        waitingTime: isActive ? 0 : newAverageWaitingTime * (newRoadTraffic[incomingRoadId] || 0) / 2,
+        signalColor: isActive ? "#4ade80" : "#ef4444" // Green if active, red if not
+      };
+    }
+  });
   
   // Determine current state for Q-learning
   const currentState = createStateKey(newRoadTraffic);
@@ -291,6 +325,7 @@ const simulateStep = (
     learningRate: settings.learningRate,
     discountFactor: settings.discountFactor,
     roadTraffic: newRoadTraffic,
+    nodeTrafficState: newNodeTrafficState,
     adaptiveMode: settings.adaptiveMode
   };
 };
@@ -317,29 +352,15 @@ const generateVehicles = (roadTraffic: Record<string, number>, currentPhase: num
         const maxDistance = edge.length - 10; // Keep vehicles on the road
         const scaledDistance = Math.min(distance, maxDistance);
         
-        // Convert polar coordinates to cartesian
-        const angleRad = (edge.angle * Math.PI) / 180;
-        let x, y;
+        // Find the correct nodes for this edge
+        const fromNode = trafficNodes.find(n => n.id === edge.from);
+        const toNode = trafficNodes.find(n => n.id === edge.to);
+        if (!fromNode || !toNode) continue;
         
-        // If the road goes to the center, position vehicles coming from outside
-        if (edge.to === "e") {
-          const fromNode = trafficNodes.find(n => n.id === edge.from);
-          if (!fromNode) continue;
-          
-          // Vehicles position from outer node towards center
-          const distanceRatio = 1 - (scaledDistance / edge.length);
-          x = fromNode.x + (trafficNodes[0].x - fromNode.x) * distanceRatio;
-          y = fromNode.y + (trafficNodes[0].y - fromNode.y) * distanceRatio;
-        } else {
-          // For outgoing roads, start from center and go outwards
-          const toNode = trafficNodes.find(n => n.id === edge.to);
-          if (!toNode) continue;
-          
-          // Vehicles position from center towards outer node
-          const distanceRatio = scaledDistance / edge.length;
-          x = trafficNodes[0].x + (toNode.x - trafficNodes[0].x) * distanceRatio;
-          y = trafficNodes[0].y + (toNode.y - trafficNodes[0].y) * distanceRatio;
-        }
+        // Vehicles position from fromNode towards toNode
+        const distanceRatio = scaledDistance / edge.length;
+        const x = fromNode.x + (toNode.x - fromNode.x) * distanceRatio;
+        const y = fromNode.y + (toNode.y - fromNode.y) * distanceRatio;
         
         // Calculate speed based on traffic light phase
         const speed = isActive ? 

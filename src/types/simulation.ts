@@ -12,7 +12,14 @@ export interface SimulationState {
   learningRate: number;
   discountFactor: number;
   roadTraffic: Record<string, number>; // Traffic on each road (vehicles per road)
+  nodeTrafficState: Record<string, NodeTrafficState>; // Traffic state at each node
   adaptiveMode: boolean; // Whether to use the adaptive Q-learning mode
+}
+
+export interface NodeTrafficState {
+  vehicleCount: number; // Number of vehicles at this node
+  waitingTime: number; // Average waiting time at this node
+  signalColor: string; // Current signal color at this node
 }
 
 export interface TrafficLightPhase {
@@ -44,7 +51,7 @@ export interface TrafficEdge {
   from: string;
   to: string;
   length: number;
-  angle: number; // Angle in degrees for circular layout
+  angle: number; // Angle in degrees
 }
 
 export interface Vehicle {

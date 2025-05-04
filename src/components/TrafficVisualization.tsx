@@ -1,14 +1,16 @@
 
 import { useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Vehicle, TrafficLightPhase, TrafficNode, TrafficEdge } from "@/types/simulation";
+import { Vehicle, TrafficLightPhase, TrafficNode, TrafficEdge, NodeTrafficState } from "@/types/simulation";
 import { generateVehicles, trafficNodes, trafficEdges } from "@/services/simulationService";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 interface TrafficVisualizationProps {
   vehicleCount: number;
   currentPhase: number;
   trafficPhases: TrafficLightPhase[];
   roadTraffic: Record<string, number>;
+  nodeTrafficState: Record<string, NodeTrafficState>;
 }
 
 const TrafficVisualization = ({
@@ -16,6 +18,7 @@ const TrafficVisualization = ({
   currentPhase,
   trafficPhases,
   roadTraffic,
+  nodeTrafficState,
 }: TrafficVisualizationProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const currentPhaseInfo = trafficPhases[currentPhase];
@@ -39,21 +42,16 @@ const TrafficVisualization = ({
     
     // Draw nodes
     trafficNodes.forEach(node => {
-      drawNode(ctx, node);
+      const nodeState = nodeTrafficState[node.id];
+      drawNode(ctx, node, nodeState);
     });
-
-    // Draw traffic light at central node
-    const centralNode = trafficNodes.find(node => node.id === "e");
-    if (centralNode) {
-      drawTrafficLight(ctx, centralNode.x, centralNode.y, currentPhaseInfo);
-    }
 
     // Generate and draw vehicles
     const vehicles = generateVehicles(roadTraffic, currentPhase);
     vehicles.forEach((vehicle) => {
       drawVehicle(ctx, vehicle);
     });
-  }, [vehicleCount, currentPhase, trafficPhases, roadTraffic]);
+  }, [vehicleCount, currentPhase, trafficPhases, roadTraffic, nodeTrafficState]);
 
   const drawRoads = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
     // Draw all edges (roads)
@@ -101,61 +99,31 @@ const TrafficVisualization = ({
     });
   };
 
-  const drawTrafficLight = (
-    ctx: CanvasRenderingContext2D,
-    x: number,
-    y: number,
-    phaseInfo: TrafficLightPhase
-  ) => {
-    // Draw traffic light circles around the center
-    const radius = 25;
-    const centerX = x;
-    const centerY = y;
-    
-    // Draw traffic light housing
-    ctx.fillStyle = "#334155"; // slate-700
-    ctx.beginPath();
-    ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
-    ctx.fill();
-    
-    // Draw active roads indicator
-    phaseInfo.activeRoads.forEach(roadId => {
-      const edge = trafficEdges.find(e => e.id === roadId);
-      if (!edge) return;
-      
-      const angleRad = (edge.angle * Math.PI) / 180;
-      const lightX = centerX + Math.cos(angleRad) * (radius - 5);
-      const lightY = centerY + Math.sin(angleRad) * (radius - 5);
-      
-      // Draw light
-      ctx.fillStyle = phaseInfo.color;
-      ctx.beginPath();
-      ctx.arc(lightX, lightY, 5, 0, Math.PI * 2);
-      ctx.fill();
-    });
-    
-    // Label for current phase
-    ctx.fillStyle = "#f8fafc"; // slate-50
-    ctx.font = "12px sans-serif";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText(phaseInfo.name, centerX, centerY);
-  };
-
   const drawNode = (
     ctx: CanvasRenderingContext2D,
-    node: TrafficNode
+    node: TrafficNode,
+    nodeState: NodeTrafficState
   ) => {
+    // Draw node circle
     ctx.fillStyle = node.hasTrafficLight ? "#94a3b8" : "#cbd5e1"; // slate-400 or slate-300
     ctx.beginPath();
     ctx.arc(node.x, node.y, node.hasTrafficLight ? 15 : 7, 0, Math.PI * 2);
     ctx.fill();
     
+    // Draw node ID
     ctx.fillStyle = "#1e293b"; // slate-900
     ctx.font = "12px sans-serif";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.fillText(node.id, node.x, node.y);
+    
+    // If this node has a traffic light, draw a colored circle indicating the signal
+    if (node.hasTrafficLight) {
+      ctx.fillStyle = nodeState.signalColor;
+      ctx.beginPath();
+      ctx.arc(node.x, node.y - 20, 5, 0, Math.PI * 2);
+      ctx.fill();
+    }
   };
 
   const drawVehicle = (ctx: CanvasRenderingContext2D, vehicle: Vehicle) => {
@@ -177,12 +145,12 @@ const TrafficVisualization = ({
   };
 
   return (
-    <Card>
+    <Card className="col-span-2">
       <CardHeader className="pb-2">
         <CardTitle className="text-lg">Traffic Simulation</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-4">
           <div className="bg-slate-100 p-2 rounded-lg">
             <canvas
               ref={canvasRef}
@@ -191,20 +159,50 @@ const TrafficVisualization = ({
               className="w-full bg-slate-50 border border-slate-200 rounded"
             ></canvas>
           </div>
-          <div className="grid grid-cols-2 gap-2">
+          
+          <div className="grid grid-cols-2 gap-2 mb-4">
             <div className="flex items-center justify-between bg-slate-100 p-2 rounded">
               <span>Current phase:</span>
               <span 
                 className="px-2 py-1 rounded font-semibold" 
-                style={{ backgroundColor: currentPhaseInfo.color, color: currentPhaseInfo.name.includes("Green") ? "black" : "white" }}
+                style={{ backgroundColor: currentPhaseInfo.color, color: "#000000" }}
               >
                 {currentPhaseInfo.name}
               </span>
             </div>
             <div className="flex items-center justify-between bg-slate-100 p-2 rounded">
-              <span>Vehicles:</span>
+              <span>Total vehicles:</span>
               <span className="font-semibold">{vehicleCount}</span>
             </div>
+          </div>
+
+          <div>
+            <h3 className="text-sm font-medium mb-2">Node Traffic States</h3>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Node</TableHead>
+                  <TableHead>Vehicles</TableHead>
+                  <TableHead>Waiting Time</TableHead>
+                  <TableHead>Signal</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {Object.entries(nodeTrafficState).map(([nodeId, state]) => (
+                  <TableRow key={nodeId}>
+                    <TableCell className="font-medium">{nodeId}</TableCell>
+                    <TableCell>{state.vehicleCount}</TableCell>
+                    <TableCell>{state.waitingTime.toFixed(1)}s</TableCell>
+                    <TableCell>
+                      <div 
+                        className="w-4 h-4 rounded-full inline-block"
+                        style={{ backgroundColor: state.signalColor }} 
+                      />
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </div>
         </div>
       </CardContent>
