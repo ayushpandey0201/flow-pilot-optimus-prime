@@ -1,4 +1,3 @@
-
 import { SimulationState, SimulationSettings, Vehicle, TrafficLightPhase, TrafficNode, TrafficEdge } from "../types/simulation";
 
 // Define traffic nodes for the circular layout
@@ -137,7 +136,7 @@ const determineTrafficLevel = (vehicleCount: number): string => {
 /**
  * Creates a state key based on current traffic levels on all roads
  */
-const createStateKey = (roadTraffic: Record<string, number>): string => {
+export const createStateKey = (roadTraffic: Record<string, number>): string => {
   return `${determineTrafficLevel(roadTraffic["road_a"])}_${determineTrafficLevel(roadTraffic["road_b"])}_${determineTrafficLevel(roadTraffic["road_c"])}_${determineTrafficLevel(roadTraffic["road_d"])}_${determineTrafficLevel(roadTraffic["road_f"])}_${determineTrafficLevel(roadTraffic["road_g"])}`;
 };
 
@@ -411,12 +410,9 @@ const generateVehicles = (roadTraffic: Record<string, number>, currentPhase: num
   return vehicles;
 };
 
+// Export the necessary functions and values
+// Note: Removing duplicate exports
 export {
-  initialSimulationState,
-  trafficLightPhases,
-  trafficNodes,
-  trafficEdges,
   simulateStep,
   generateVehicles,
-  createStateKey,
 };
