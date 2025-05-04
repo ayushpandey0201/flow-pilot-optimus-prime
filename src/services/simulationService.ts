@@ -1,78 +1,46 @@
+
 import { SimulationState, SimulationSettings, Vehicle, TrafficLightPhase, TrafficNode, TrafficEdge } from "../types/simulation";
 
-// Define traffic nodes for the circular layout
+// Define traffic nodes for the cross-shaped layout
 export const trafficNodes: TrafficNode[] = [
   { id: "e", x: 250, y: 250, hasTrafficLight: true }, // Central node
-  { id: "a", x: 400, y: 250, hasTrafficLight: false }, // 0 degrees
-  { id: "b", x: 325, y: 375, hasTrafficLight: false }, // 60 degrees
-  { id: "c", x: 175, y: 375, hasTrafficLight: false }, // 120 degrees
-  { id: "d", x: 100, y: 250, hasTrafficLight: false }, // 180 degrees
-  { id: "f", x: 175, y: 125, hasTrafficLight: false }, // 240 degrees
-  { id: "g", x: 325, y: 125, hasTrafficLight: false }, // 300 degrees
+  { id: "n", x: 250, y: 100, hasTrafficLight: false }, // North
+  { id: "e", x: 400, y: 250, hasTrafficLight: false }, // East
+  { id: "s", x: 250, y: 400, hasTrafficLight: false }, // South
+  { id: "w", x: 100, y: 250, hasTrafficLight: false }, // West
 ];
 
 // Define traffic edges (roads)
 export const trafficEdges: TrafficEdge[] = [
-  { id: "road_a", from: "a", to: "e", length: 150, angle: 0 },
-  { id: "road_b", from: "b", to: "e", length: 150, angle: 60 },
-  { id: "road_c", from: "c", to: "e", length: 150, angle: 120 },
-  { id: "road_d", from: "d", to: "e", length: 150, angle: 180 },
-  { id: "road_f", from: "f", to: "e", length: 150, angle: 240 },
-  { id: "road_g", from: "g", to: "e", length: 150, angle: 300 },
+  // Incoming roads
+  { id: "road_n", from: "n", to: "e", length: 150, angle: 270 }, // North to center
+  { id: "road_e", from: "e", to: "e", length: 150, angle: 0 },   // East to center
+  { id: "road_s", from: "s", to: "e", length: 150, angle: 90 },  // South to center
+  { id: "road_w", from: "w", to: "e", length: 150, angle: 180 }, // West to center
   
-  // Return paths
-  { id: "road_a_out", from: "e", to: "a", length: 150, angle: 0 },
-  { id: "road_b_out", from: "e", to: "b", length: 150, angle: 60 },
-  { id: "road_c_out", from: "e", to: "c", length: 150, angle: 120 },
-  { id: "road_d_out", from: "e", to: "d", length: 150, angle: 180 },
-  { id: "road_f_out", from: "e", to: "f", length: 150, angle: 240 },
-  { id: "road_g_out", from: "e", to: "g", length: 150, angle: 300 },
+  // Outgoing roads
+  { id: "road_n_out", from: "e", to: "n", length: 150, angle: 270 }, // Center to north
+  { id: "road_e_out", from: "e", to: "e", length: 150, angle: 0 },   // Center to east
+  { id: "road_s_out", from: "e", to: "s", length: 150, angle: 90 },  // Center to south
+  { id: "road_w_out", from: "e", to: "w", length: 150, angle: 180 }, // Center to west
 ];
 
-// Define traffic light phases - one for each incoming road
+// Define traffic light phases - combining complementary roads to optimize flow
 export const trafficLightPhases: TrafficLightPhase[] = [
   { 
     id: 0, 
-    name: "A Green", 
+    name: "N-S Green", 
     duration: 30, 
     color: "#4ade80",
-    activeRoads: ["road_a"]
+    activeRoads: ["road_n", "road_s"] // North and South get green simultaneously
   },
   { 
     id: 1, 
-    name: "B Green", 
+    name: "E-W Green", 
     duration: 30, 
     color: "#4ade80",
-    activeRoads: ["road_b"]
-  },
-  { 
-    id: 2, 
-    name: "C Green", 
-    duration: 30, 
-    color: "#4ade80",
-    activeRoads: ["road_c"]
-  },
-  { 
-    id: 3, 
-    name: "D Green", 
-    duration: 30, 
-    color: "#4ade80",
-    activeRoads: ["road_d"]
-  },
-  { 
-    id: 4, 
-    name: "F Green", 
-    duration: 30, 
-    color: "#4ade80",
-    activeRoads: ["road_f"]
-  },
-  { 
-    id: 5, 
-    name: "G Green", 
-    duration: 30, 
-    color: "#4ade80",
-    activeRoads: ["road_g"]
-  },
+    activeRoads: ["road_e", "road_w"] // East and West get green simultaneously
+  }
 ];
 
 // Initial Q-values for each state-action pair
@@ -84,16 +52,12 @@ const trafficLevels = ["low", "medium", "high"];
 // Initialize Q-values for all possible state-action pairs
 trafficLightPhases.forEach((phase) => {
   // Generate all possible traffic state combinations
-  for (let a = 0; a < trafficLevels.length; a++) {
-    for (let b = 0; b < trafficLevels.length; b++) {
-      for (let c = 0; c < trafficLevels.length; c++) {
-        for (let d = 0; d < trafficLevels.length; d++) {
-          for (let f = 0; f < trafficLevels.length; f++) {
-            for (let g = 0; g < trafficLevels.length; g++) {
-              const state = `${trafficLevels[a]}_${trafficLevels[b]}_${trafficLevels[c]}_${trafficLevels[d]}_${trafficLevels[f]}_${trafficLevels[g]}`;
-              initialQValues[`${state}_${phase.id}`] = 0;
-            }
-          }
+  for (let n = 0; n < trafficLevels.length; n++) {
+    for (let e = 0; e < trafficLevels.length; e++) {
+      for (let s = 0; s < trafficLevels.length; s++) {
+        for (let w = 0; w < trafficLevels.length; w++) {
+          const state = `${trafficLevels[n]}_${trafficLevels[e]}_${trafficLevels[s]}_${trafficLevels[w]}`;
+          initialQValues[`${state}_${phase.id}`] = 0;
         }
       }
     }
@@ -114,12 +78,10 @@ export const initialSimulationState: SimulationState = {
   learningRate: 0.1,
   discountFactor: 0.9,
   roadTraffic: {
-    "road_a": 0,
-    "road_b": 0,
-    "road_c": 0,
-    "road_d": 0,
-    "road_f": 0,
-    "road_g": 0
+    "road_n": 0,
+    "road_e": 0,
+    "road_s": 0,
+    "road_w": 0
   },
   adaptiveMode: true
 };
@@ -137,7 +99,7 @@ const determineTrafficLevel = (vehicleCount: number): string => {
  * Creates a state key based on current traffic levels on all roads
  */
 export const createStateKey = (roadTraffic: Record<string, number>): string => {
-  return `${determineTrafficLevel(roadTraffic["road_a"])}_${determineTrafficLevel(roadTraffic["road_b"])}_${determineTrafficLevel(roadTraffic["road_c"])}_${determineTrafficLevel(roadTraffic["road_d"])}_${determineTrafficLevel(roadTraffic["road_f"])}_${determineTrafficLevel(roadTraffic["road_g"])}`;
+  return `${determineTrafficLevel(roadTraffic["road_n"])}_${determineTrafficLevel(roadTraffic["road_e"])}_${determineTrafficLevel(roadTraffic["road_s"])}_${determineTrafficLevel(roadTraffic["road_w"])}`;
 };
 
 /**
@@ -169,6 +131,7 @@ const calculateReward = (
 
 /**
  * Selects an action (traffic light phase) using epsilon-greedy strategy
+ * Enhanced to prioritize phases that optimize overall flow
  */
 const selectAction = (
   state: string,
@@ -182,24 +145,16 @@ const selectAction = (
     return Math.floor(Math.random() * trafficLightPhases.length);
   }
   
-  // Adaptive mode: prioritize roads with high traffic
+  // Adaptive mode: analyze traffic patterns to optimize flow
   if (adaptiveMode) {
-    // Find the road with the highest traffic
-    let maxTraffic = -1;
-    let maxTrafficRoad = "";
+    const northSouthTraffic = roadTraffic["road_n"] + roadTraffic["road_s"];
+    const eastWestTraffic = roadTraffic["road_e"] + roadTraffic["road_w"];
     
-    Object.entries(roadTraffic).forEach(([roadId, traffic]) => {
-      if (traffic > maxTraffic) {
-        maxTraffic = traffic;
-        maxTrafficRoad = roadId;
-      }
-    });
-    
-    // Find the phase that serves this road
-    for (let i = 0; i < trafficLightPhases.length; i++) {
-      if (trafficLightPhases[i].activeRoads.includes(maxTrafficRoad)) {
-        return i;
-      }
+    // Choose the phase that serves the direction with more traffic
+    if (northSouthTraffic > eastWestTraffic) {
+      return 0; // North-South green
+    } else {
+      return 1; // East-West green
     }
   }
   
@@ -411,7 +366,6 @@ const generateVehicles = (roadTraffic: Record<string, number>, currentPhase: num
 };
 
 // Export the necessary functions and values
-// Note: Removing duplicate exports
 export {
   simulateStep,
   generateVehicles,
