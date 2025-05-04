@@ -2,7 +2,8 @@
 import { useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Vehicle, TrafficLightPhase, TrafficNode, TrafficEdge, NodeTrafficState } from "@/types/simulation";
-import { generateVehicles, trafficNodes, trafficEdges } from "@/services/simulationService";
+import { generateVehicles } from "@/services/vehicleService";
+import { trafficNodes, trafficEdges } from "@/services/trafficData";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 interface TrafficVisualizationProps {

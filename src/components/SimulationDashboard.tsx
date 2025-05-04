@@ -1,6 +1,7 @@
+
 import { useSimulation } from "@/hooks/useSimulation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { trafficLightPhases } from "@/services/simulationService";
+import { trafficLightPhases } from "@/services/trafficData";
 import TrafficVisualization from "./TrafficVisualization";
 import QlearningInfo from "./QlearningInfo";
 import ControlPanel from "./ControlPanel";

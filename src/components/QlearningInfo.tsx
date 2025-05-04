@@ -1,7 +1,6 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SimulationState } from "@/types/simulation";
-import { createStateKey } from "@/services/simulationService";
+import { createStateKey } from "@/services/trafficUtils";
 
 interface QlearningInfoProps {
   simulationState: SimulationState;
